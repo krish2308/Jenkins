@@ -1,0 +1,26 @@
+pipeline {
+  parameters {
+    choice(name: 'SERVER_NAME', choices: ['server1.example.com', 'server2.example.com', 'server3.example.com'], description: 'Name of the server to run the script on')
+    choice(name: 'Patch', description: 'Month and Year of Patch, format: MMM_YYYY, for example: JAN_2023')
+    choice(name: 'Action', choices: ['backup', 'apply', 'verify'], description: 'Action to perform')
+  }
+  
+  agent any
+  
+  stages {
+    stage('Print parameters') {
+      when {
+        expression { params.SERVER_NAME != '' }
+      }
+      
+      steps {
+        // Use SSH to print the parameters on the selected server
+        sshagent (credentials: ['my-ssh-key']) {
+          sh "ssh ${params.SERVER_NAME} 'echo \"Server name: ${params.SERVER_NAME}\"'"
+          sh "ssh ${params.SERVER_NAME} 'echo \"File name: ${params.Patch}\"'"
+          sh "ssh ${params.SERVER_NAME} 'echo \"Action: ${params.Action}\"'"
+        }
+      }
+    }
+  }
+}

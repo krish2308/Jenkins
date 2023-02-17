@@ -1,0 +1,45 @@
+pipeline {
+  agent any
+  
+  environment {
+    // Define the Git repository URL and branch
+    GIT_REPO_URL = "https://github.com/your-git-repo.git"
+    GIT_BRANCH = "master"
+    
+    // Define the servers where you want to run the script
+    SERVERS = ["server1.example.com", "server2.example.com", "server3.example.com"]
+    
+    // Define the script you want to run
+    SCRIPT = "script.sh"
+  }
+  
+  stages {
+    stage('Clone Git repository') {
+      steps {
+        // Clone the Git repository on the Jenkins master
+        git branch: "${env.GIT_BRANCH}", url: "${env.GIT_REPO_URL}"
+      }
+    }
+    
+    stage('Deploy to servers') {
+      parallel {
+        for (server in env.SERVERS) {
+          stage("Deploy to ${server}") {
+            steps {
+              // Use SSH to copy the Git repository to the server
+              sshagent (credentials: ['my-ssh-key']) {
+                sh "ssh ${server} 'rm -rf /path/to/clone/${env.GIT_BRANCH} && mkdir -p /path/to/clone/${env.GIT_BRANCH}'"
+                sh "scp -r ${env.WORKSPACE}/. ${server}:/path/to/clone/${env.GIT_BRANCH}/"
+              }
+              
+              // Run the script on the server
+              sshagent (credentials: ['my-ssh-key']) {
+                sh "ssh ${server} 'cd /path/to/clone/${env.GIT_BRANCH} && sh ${env.SCRIPT}'"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

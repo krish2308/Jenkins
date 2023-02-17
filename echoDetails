@@ -1,0 +1,26 @@
+pipeline {
+  parameters {
+    choice(name: 'SERVER_NAME', choices: ['server1.example.com', 'server2.example.com', 'server3.example.com'], description: 'Name of the server to run the script on')
+    string(name: 'FILE_NAME', description: 'Name of the file to perform the action on')
+    choice(name: 'ACTION', choices: ['create', 'delete'], description: 'Action to perform on the file')
+  }
+  
+  agent any
+  
+  stages {
+    stage('Print parameters') {
+      when {
+        expression { params.SERVER_NAME != '' }
+      }
+      
+      steps {
+        // Use SSH to print the parameters on the selected server
+        sshagent (credentials: ['my-ssh-key']) {
+          sh "ssh ${params.SERVER_NAME} 'echo \"Server name: ${params.SERVER_NAME}\"'"
+          sh "ssh ${params.SERVER_NAME} 'echo \"File name: ${params.FILE_NAME}\"'"
+          sh "ssh ${params.SERVER_NAME} 'echo \"Action: ${params.ACTION}\"'"
+        }
+      }
+    }
+  }
+}
